@@ -1,7 +1,8 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.google.ksp)
+    // KSP（Kotlin Symbol Processing）: Room がデータベース用のコードを自動生成するために必要です。
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -46,19 +47,28 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
 
-    // Room
-    implementation(libs.room.runtime)
-    implementation(libs.room.ktx)
-    ksp(libs.room.compiler)
+    // Room（データベース）
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
 
-    // ViewModel
+    // ViewModel を Compose から使うためのライブラリ
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+
+    // コルーチン（非同期処理。DB アクセスなどで使用）
+    implementation(libs.kotlinx.coroutines.android)
+
+    // Coil（画像表示ライブラリ。本格的な利用はフェーズ2から）
+    implementation(libs.coil.compose)
+    implementation(libs.coil.android)
 
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.test.core)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }
