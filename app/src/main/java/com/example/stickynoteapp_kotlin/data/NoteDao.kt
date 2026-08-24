@@ -6,6 +6,7 @@ import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
+
 @Dao
 interface NoteDao {
 
@@ -19,7 +20,7 @@ interface NoteDao {
 
     // 削除されていない（isDeleted = 0）付箋を一覧表示用に取得します。
     @Query("SELECT * FROM notes WHERE isDeleted = 0 ORDER BY isTop DESC, updatedAt DESC")
-    fun queryAllActive(): Flow<List<NoteEntity>>
+    fun getAllNotes(): Flow<List<NoteEntity>>
 
     // id を指定して1件だけ取得します。
     @Query("SELECT * FROM notes WHERE id = :id")
@@ -27,5 +28,5 @@ interface NoteDao {
 
     // 物理的には消さず、isDeleted フラグだけを立てる「論理削除」です（フェーズ2で使用）。
     @Query("UPDATE notes SET isDeleted = 1 WHERE id = :id")
-    suspend fun markDeleted(id: Long)
+    suspend fun delete(id: Long)
 }
