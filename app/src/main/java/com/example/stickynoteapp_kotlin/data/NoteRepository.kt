@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 class NoteRepository(private val noteDao: NoteDao) {
 
     // 削除されていない付箋の一覧（データが変わると自動で更新される）。
-    val allActiveNotes: Flow<List<NoteEntity>> = noteDao.queryAllActive()
+    val allNotes: Flow<List<NoteEntity>> = noteDao.getAllNotes()
 
     suspend fun insert(note: NoteEntity): Long = noteDao.insert(note)
 
@@ -15,5 +15,5 @@ class NoteRepository(private val noteDao: NoteDao) {
 
     suspend fun getById(id: Long): NoteEntity? = noteDao.getById(id)
 
-    suspend fun markDeleted(id: Long) = noteDao.markDeleted(id)
+    suspend fun delete(id: Long) = noteDao.delete(id)
 }
