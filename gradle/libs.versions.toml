@@ -45,7 +45,8 @@ coil-android = { group = "io.coil-kt.coil3", name = "coil-android", version.ref 
 # --- テスト用（issue #2: 新規作成/編集/保存/再起動復元の確認） ---
 androidx-test-core = { group = "androidx.test", name = "core", version.ref = "androidxTestCore" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinxCoroutinesTest" }
-
+# --- アイコン
+androidx-compose-material-icons-core = { group = "androidx.compose.material", name = "material-icons-core" }
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
