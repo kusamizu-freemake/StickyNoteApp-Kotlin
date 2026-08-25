@@ -4,44 +4,64 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import androidx.activity.viewModels
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.example.stickynoteapp_kotlin.data.AppDatabase
+import com.example.stickynoteapp_kotlin.data.NoteRepository
+import com.example.stickynoteapp_kotlin.viewmodel.NoteViewModel
+import com.example.stickynoteapp_kotlin.viewmodel.NoteViewModelFactory
+import com.example.stickynoteapp_kotlin.screens.NoteEditorScreen
+import com.example.stickynoteapp_kotlin.screens.NoteListScreen
 import com.example.stickynoteapp_kotlin.ui.theme.StickyNoteAppKotlinTheme
 
 class MainActivity : ComponentActivity() {
+    // Repositoryを使ってViewModelを作成する
+    private val viewModel: NoteViewModel by viewModels {
+        val database = AppDatabase.getDatabase(applicationContext)
+        val repository = NoteRepository(database.noteDao())
+        NoteViewModelFactory(repository)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             StickyNoteAppKotlinTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+                StickyNoteApp(viewModel = viewModel)
             }
         }
     }
 }
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
+// 「今どの画面を表示するか」を表す型
+private sealed class Screen {
+    data object List : Screen()
+    data class Editor(val noteId: Long?) : Screen()
 }
 
-@Preview(showBackground = true)
+// 今の画面（一覧 or 編集）を覚えておき、それに応じて表示する内容を切り替えます。
 @Composable
-fun GreetingPreview() {
-    StickyNoteAppKotlinTheme {
-        Greeting("Android")
+private fun StickyNoteApp(viewModel: NoteViewModel) {
+    var screen by remember { mutableStateOf<Screen>(Screen.List) }
+
+    when (val current = screen) {
+        is Screen.List -> {
+            NoteListScreen(
+                viewModel = viewModel,
+                onNoteClick = { noteId -> screen = Screen.Editor(noteId) },
+                onAddClick = { screen = Screen.Editor(null) }
+            )
+        }
+        is Screen.Editor -> {
+            NoteEditorScreen(
+                viewModel = viewModel,
+                noteId = current.noteId,
+                onBack = { screen = Screen.List }
+            )
+        }
     }
 }
