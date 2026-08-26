@@ -26,14 +26,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.stickynoteapp_kotlin.R
 import com.example.stickynoteapp_kotlin.data.NoteEntity
-import com.example.stickynoteapp_kotlin.viewmodel.NoteViewModel
+import com.example.stickynoteapp_kotlin.viewmodel.NoteEditorViewModel
 
 // 付箋を作成・編集する画面
 // TopAppBar でMaterial3の実験的なAPIを使用
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NoteEditorScreen(
-    viewModel: NoteViewModel,
+    viewModel: NoteEditorViewModel,
     noteId: Long?,
     onBack: () -> Unit
 ) {

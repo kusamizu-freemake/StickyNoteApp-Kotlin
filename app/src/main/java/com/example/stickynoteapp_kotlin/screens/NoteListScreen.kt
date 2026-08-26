@@ -31,7 +31,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.stickynoteapp_kotlin.R
 import com.example.stickynoteapp_kotlin.data.NoteEntity
-import com.example.stickynoteapp_kotlin.viewmodel.NoteViewModel
+import com.example.stickynoteapp_kotlin.viewmodel.NoteListViewModel
 import com.example.stickynoteapp_kotlin.ui.theme.StickyNoteAppKotlinTheme
 
 // 付箋の一覧を表示する画面
@@ -39,7 +39,7 @@ import com.example.stickynoteapp_kotlin.ui.theme.StickyNoteAppKotlinTheme
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NoteListScreen(
-    viewModel: NoteViewModel,
+    viewModel: NoteListViewModel,
     onNoteClick: (Long) -> Unit,
     onAddClick: () -> Unit
 ) {
