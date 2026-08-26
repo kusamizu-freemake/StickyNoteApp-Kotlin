@@ -57,12 +57,11 @@ fun NoteEditorScreen(
         isLoading = false
     }
 
-    // 「戻る」または「保存」が押されたときにまとめて呼ぶ処理。
-    fun saveAndGoBack() {
+    // 現在の入力内容をDBに保存する処理。
+    fun save() {
         val base = loadedNote ?: NoteEntity()
         val toSave = base.copy(text = text, updatedAt = System.currentTimeMillis())
         viewModel.saveNote(toSave)
-        onBack()
     }
 
     Scaffold(
@@ -78,7 +77,7 @@ fun NoteEditorScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { saveAndGoBack() }) {
+                    IconButton(onClick = { save(); onBack() }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.editor_back_description)
@@ -86,7 +85,7 @@ fun NoteEditorScreen(
                     }
                 },
                 actions = {
-                    TextButton(onClick = { saveAndGoBack() }) {
+                    TextButton(onClick = { save(); onBack() }) {
                         Text(stringResource(R.string.editor_save))
                     }
                 }
