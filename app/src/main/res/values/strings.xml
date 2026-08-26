@@ -1,3 +1,16 @@
 <resources>
     <string name="app_name">StickyNoteApp-Kotlin</string>
+
+    <!-- NoteEditorScreen -->
+    <string name="editor_title_new">新規付箋</string>
+    <string name="editor_title_edit">付箋を編集</string>
+    <string name="editor_back_description">戻る（自動的に保存されます）</string>
+    <string name="editor_save">保存</string>
+    <string name="editor_text_placeholder">ここにメモを入力してください…</string>
+
+    <!-- NoteListScreen -->
+    <string name="list_title">付箋一覧</string>
+    <string name="list_add_description">新規作成</string>
+    <string name="list_empty_message">付箋がありません。右下の + から作成しましょう</string>
+    <string name="note_empty_text">（空の付箋）</string>
 </resources>
