@@ -25,11 +25,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.stickynoteapp_kotlin.R
 import com.example.stickynoteapp_kotlin.data.NoteEntity
-import com.example.stickynoteapp_kotlin.viewmodel.NoteViewModel
+import com.example.stickynoteapp_kotlin.viewmodel.NoteListViewModel
 import com.example.stickynoteapp_kotlin.ui.theme.StickyNoteAppKotlinTheme
 
 // 付箋の一覧を表示する画面
@@ -37,7 +39,7 @@ import com.example.stickynoteapp_kotlin.ui.theme.StickyNoteAppKotlinTheme
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NoteListScreen(
-    viewModel: NoteViewModel,
+    viewModel: NoteListViewModel,
     onNoteClick: (Long) -> Unit,
     onAddClick: () -> Unit
 ) {
@@ -46,11 +48,11 @@ fun NoteListScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("付箋一覧") })
+            TopAppBar(title = { Text(stringResource(R.string.list_title)) })
         },
         floatingActionButton = {
             FloatingActionButton(onClick = onAddClick) {
-                Icon(Icons.Default.Add, contentDescription = "新規作成")
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.list_add_description))
             }
         }
     ) { innerPadding ->
@@ -63,7 +65,7 @@ fun NoteListScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "付箋がありません。右下の + から作成しましょう",
+                    text = stringResource(R.string.list_empty_message),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -100,7 +102,7 @@ fun NoteCard(note: NoteEntity, onClick: () -> Unit) {
         colors = CardDefaults.cardColors(containerColor = backgroundColor)
     ) {
         Text(
-            text = note.text.ifBlank { "（空の付箋）" },
+            text = note.text.ifBlank { stringResource(R.string.note_empty_text) },
             modifier = Modifier.padding(16.dp),
             color = Color.Black,
             maxLines = 4,

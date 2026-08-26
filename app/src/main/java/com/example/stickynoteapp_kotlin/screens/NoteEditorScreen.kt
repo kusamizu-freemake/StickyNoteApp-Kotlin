@@ -22,16 +22,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.stickynoteapp_kotlin.R
 import com.example.stickynoteapp_kotlin.data.NoteEntity
-import com.example.stickynoteapp_kotlin.viewmodel.NoteViewModel
+import com.example.stickynoteapp_kotlin.viewmodel.NoteEditorViewModel
 
 // 付箋を作成・編集する画面
 // TopAppBar でMaterial3の実験的なAPIを使用
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NoteEditorScreen(
-    viewModel: NoteViewModel,
+    viewModel: NoteEditorViewModel,
     noteId: Long?,
     onBack: () -> Unit
 ) {
@@ -55,26 +57,36 @@ fun NoteEditorScreen(
         isLoading = false
     }
 
-    // 「戻る」または「保存」が押されたときにまとめて呼ぶ処理。
-    fun saveAndGoBack() {
+    // 現在の入力内容をDBに保存する処理。
+    fun save() {
         val base = loadedNote ?: NoteEntity()
         val toSave = base.copy(text = text, updatedAt = System.currentTimeMillis())
         viewModel.saveNote(toSave)
-        onBack()
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (noteId == null) "新規付箋" else "付箋を編集") },
+                title = {
+                    Text(
+                        if (noteId == null) {
+                            stringResource(R.string.editor_title_new)
+                        } else {
+                            stringResource(R.string.editor_title_edit)
+                        }
+                    )
+                },
                 navigationIcon = {
-                    IconButton(onClick = { saveAndGoBack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "戻る（自動的に保存されます）")
+                    IconButton(onClick = { save(); onBack() }) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.editor_back_description)
+                        )
                     }
                 },
                 actions = {
-                    TextButton(onClick = { saveAndGoBack() }) {
-                        Text("保存")
+                    TextButton(onClick = { save(); onBack() }) {
+                        Text(stringResource(R.string.editor_save))
                     }
                 }
             )
@@ -97,7 +109,7 @@ fun NoteEditorScreen(
                     .fillMaxSize()
                     .padding(innerPadding)
                     .padding(16.dp),
-                placeholder = { Text("ここにメモを入力してください…") }
+                placeholder = { Text(stringResource(R.string.editor_text_placeholder)) }
             )
         }
     }
