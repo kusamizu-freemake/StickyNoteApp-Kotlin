@@ -58,7 +58,9 @@ fun NoteEditorScreen(
     }
 
     // 現在の入力内容をDBに保存する処理。
+    // 待機中の自動保存があればキャンセルしてから、手動保存を実行する。
     fun save() {
+        viewModel.cancelPendingAutoSave()
         val base = loadedNote ?: NoteEntity()
         val toSave = base.copy(text = text, updatedAt = System.currentTimeMillis())
         viewModel.saveNote(toSave)
@@ -104,7 +106,11 @@ fun NoteEditorScreen(
         } else {
             OutlinedTextField(
                 value = text,
-                onValueChange = { text = it },
+                onValueChange = { newText ->
+                    text = newText
+                    // 入力のたびに ViewModel へ通知し、自動保存（debounce）の判定を任せる
+                    viewModel.onTextChanged(loadedNote ?: NoteEntity(), newText)
+                },
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
