@@ -37,6 +37,14 @@ class NoteEditorViewModel(private val repository: NoteRepository) : ViewModel() 
         }
     }
 
+    // 付箋を論理削除（DBから完全に消すのではなく、isDeleted フラグを立てる）。
+    // id が 0（＝まだ一度も保存されていない付箋）の場合、DBには存在しないため何も起こらない。
+    fun deleteNote(note: NoteEntity) {
+        viewModelScope.launch {
+            repository.delete(note.id)
+        }
+    }
+
     // テキストが変更されるたびに画面から呼び出す関数。
     // 既存の付箋のみ、入力が止まってから一定時間後に自動保存する。
     // 新規付箋はまだ一度も保存されていないため、自動保存の対象外とする。
