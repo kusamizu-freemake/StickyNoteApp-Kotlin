@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -43,6 +45,8 @@ fun NoteEditorScreen(
     var text by remember { mutableStateOf("") }
     // 「まだ Room からの読み込みが終わっていない」あいだ、ローディング表示を出すためのフラグ。
     var isLoading by remember { mutableStateOf(true) }
+    // 削除確認ダイアログを表示するかどうか。
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
     // noteIdが変わったときに、付箋データを読み込む
     LaunchedEffect(noteId) {
@@ -66,6 +70,15 @@ fun NoteEditorScreen(
         viewModel.saveNote(toSave)
     }
 
+    // 削除を確定したときの処理。
+    // 保存はせず、待機中の自動保存だけキャンセルしてから論理削除を実行し、一覧画面に戻る。
+    fun deleteAndBack() {
+        val note = loadedNote ?: return
+        viewModel.cancelPendingAutoSave()
+        viewModel.deleteNote(note)
+        onBack()
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -87,6 +100,16 @@ fun NoteEditorScreen(
                     }
                 },
                 actions = {
+                    // 削除ボタンは、既に保存済みの付箋（noteId != null）を編集しているときのみ表示する。
+                    // 新規作成中（まだ一度も保存されていない付箋）には表示しない。
+                    if (noteId != null && !isLoading) {
+                        IconButton(onClick = { showDeleteDialog = true }) {
+                            Icon(
+                                Icons.Default.Delete,
+                                contentDescription = stringResource(R.string.editor_delete_description)
+                            )
+                        }
+                    }
                     TextButton(onClick = { save(); onBack() }) {
                         Text(stringResource(R.string.editor_save))
                     }
@@ -118,5 +141,28 @@ fun NoteEditorScreen(
                 placeholder = { Text(stringResource(R.string.editor_text_placeholder)) }
             )
         }
+    }
+
+    // 削除確認ダイアログ。「削除」を押すと論理削除を実行して一覧画面に戻り、
+    // 「キャンセル」を押すと閉じるだけで何も変更しない。
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text(stringResource(R.string.editor_delete_dialog_title)) },
+            text = { Text(stringResource(R.string.editor_delete_dialog_message)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDeleteDialog = false
+                    deleteAndBack()
+                }) {
+                    Text(stringResource(R.string.editor_delete_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text(stringResource(R.string.editor_delete_cancel))
+                }
+            }
+        )
     }
 }

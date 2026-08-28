@@ -7,6 +7,11 @@
     <string name="editor_back_description">戻る（自動的に保存されます）</string>
     <string name="editor_save">保存</string>
     <string name="editor_text_placeholder">ここにメモを入力してください…</string>
+    <string name="editor_delete_description">削除</string>
+    <string name="editor_delete_dialog_title">付箋を削除しますか？</string>
+    <string name="editor_delete_dialog_message">この操作は取り消せません。</string>
+    <string name="editor_delete_confirm">削除</string>
+    <string name="editor_delete_cancel">キャンセル</string>
 
     <!-- NoteListScreen -->
     <string name="list_title">付箋一覧</string>
