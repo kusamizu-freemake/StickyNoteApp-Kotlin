@@ -16,4 +16,7 @@ class NoteRepository(private val noteDao: NoteDao) {
     suspend fun getById(id: Long): NoteEntity? = noteDao.getById(id)
 
     suspend fun delete(id: Long) = noteDao.delete(id)
+
+    // 論理削除された付箋を元に戻します（削除Undo用）。
+    suspend fun restore(id: Long) = noteDao.restore(id)
 }
