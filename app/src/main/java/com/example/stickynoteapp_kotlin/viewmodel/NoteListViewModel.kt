@@ -25,6 +25,13 @@ class NoteListViewModel(private val repository: NoteRepository) : ViewModel() {
             started = SharingStarted.WhileSubscribed(SUBSCRIPTION_TIMEOUT_MS),
             initialValue = emptyList()
         )
+
+    // 削除された付箋を元に戻します。
+    fun restoreNote(id: Long) {
+        viewModelScope.launch {
+            repository.restore(id)
+        }
+    }
 }
 
 // Repositoryを渡してNoteListViewModelを作成する

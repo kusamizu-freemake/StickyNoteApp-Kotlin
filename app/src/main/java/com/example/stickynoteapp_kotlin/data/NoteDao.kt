@@ -29,4 +29,8 @@ interface NoteDao {
     // 物理的には消さず、isDeleted フラグだけを立てる「論理削除」です（フェーズ2で使用）。
     @Query("UPDATE notes SET isDeleted = 1 WHERE id = :id")
     suspend fun delete(id: Long)
+
+    // 論理削除を取り消し、isDeleted フラグを 0 に戻します（削除Undo用）。
+    @Query("UPDATE notes SET isDeleted = 0 WHERE id = :id")
+    suspend fun restore(id: Long)
 }

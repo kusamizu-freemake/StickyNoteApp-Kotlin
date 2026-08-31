@@ -70,13 +70,12 @@ fun NoteEditorScreen(
         viewModel.saveNote(toSave)
     }
 
-    // 削除を確定したときの処理。
-    // 保存はせず、待機中の自動保存だけキャンセルしてから論理削除を実行し、一覧画面に戻る。
-    fun deleteAndBack() {
+    // 現在の付箋を論理削除する処理。
+    // 保存はせず、待機中の自動保存だけキャンセルしてから削除を実行する。
+    fun deleteNote() {
         val note = loadedNote ?: return
         viewModel.cancelPendingAutoSave()
         viewModel.deleteNote(note)
-        onBack()
     }
 
     Scaffold(
@@ -153,7 +152,8 @@ fun NoteEditorScreen(
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteDialog = false
-                    deleteAndBack()
+                    deleteNote()
+                    onBack()
                 }) {
                     Text(stringResource(R.string.editor_delete_confirm))
                 }
