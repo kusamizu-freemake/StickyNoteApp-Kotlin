@@ -37,7 +37,9 @@ import com.example.stickynoteapp_kotlin.viewmodel.NoteEditorViewModel
 fun NoteEditorScreen(
     viewModel: NoteEditorViewModel,
     noteId: Long?,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    // 削除した付箋を一覧画面へ渡すための処理
+    onNoteDeleted: (NoteEntity) -> Unit
 ) {
     // 読み込み中の付箋データ（保存済みの元データ）。text 以外の項目（色など）を保持しておくために使用
     var loadedNote by remember { mutableStateOf<NoteEntity?>(null) }
@@ -76,6 +78,8 @@ fun NoteEditorScreen(
         val note = loadedNote ?: return
         viewModel.cancelPendingAutoSave()
         viewModel.deleteNote(note)
+        // 削除した付箋を一覧画面へ通知する
+        onNoteDeleted(note)
     }
 
     Scaffold(

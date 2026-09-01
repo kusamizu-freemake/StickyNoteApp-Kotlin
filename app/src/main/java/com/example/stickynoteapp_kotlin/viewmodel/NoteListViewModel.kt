@@ -8,6 +8,7 @@ import com.example.stickynoteapp_kotlin.data.NoteRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 // NoteListViewModel は「一覧画面（NoteListScreen）」専用のViewModel
 class NoteListViewModel(private val repository: NoteRepository) : ViewModel() {
