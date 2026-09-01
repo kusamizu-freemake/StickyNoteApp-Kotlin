@@ -69,6 +69,7 @@ fun NoteListScreen(
         val result = snackbarHostState.showSnackbar(
             message = deletedMessage,
             actionLabel = undoActionLabel,
+            // Undoの有効時間（約4秒）。この間だけ「元に戻す」が可能
             duration = SnackbarDuration.Short
         )
         if (result == SnackbarResult.ActionPerformed) {
