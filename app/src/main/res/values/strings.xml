@@ -12,6 +12,7 @@
     <string name="editor_delete_dialog_message">この付箋を削除します。</string>
     <string name="editor_delete_confirm">削除</string>
     <string name="editor_delete_cancel">キャンセル</string>
+    <string name="editor_select_image">画像を選択</string>
 
     <!-- NoteListScreen -->
     <string name="list_title">付箋一覧</string>

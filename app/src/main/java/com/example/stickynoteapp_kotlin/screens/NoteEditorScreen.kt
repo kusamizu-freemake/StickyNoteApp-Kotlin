@@ -1,12 +1,22 @@
 package com.example.stickynoteapp_kotlin.screens
 
+import android.net.Uri
+import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -49,6 +59,17 @@ fun NoteEditorScreen(
     var isLoading by remember { mutableStateOf(true) }
     // 削除確認ダイアログを表示するかどうか。
     var showDeleteDialog by remember { mutableStateOf(false) }
+    // ギャラリーから選択した画像のURI。まだ未選択の場合は null。
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+
+    // ギャラリーから画像を1枚選ぶための起動処理
+    val pickImageLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        // キャンセルした場合は uri が null で返ってくるため、選択状態もリセットする
+        selectedImageUri = uri
+        Log.d("NoteEditorScreen", "selected image uri: $uri")
+    }
 
     // noteIdが変わったときに、付箋データを読み込む
     LaunchedEffect(noteId) {
@@ -130,19 +151,38 @@ fun NoteEditorScreen(
                 CircularProgressIndicator()
             }
         } else {
-            OutlinedTextField(
-                value = text,
-                onValueChange = { newText ->
-                    text = newText
-                    // 入力のたびに ViewModel へ通知し、自動保存（debounce）の判定を任せる
-                    viewModel.onTextChanged(loadedNote ?: NoteEntity(), newText)
-                },
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .padding(16.dp),
-                placeholder = { Text(stringResource(R.string.editor_text_placeholder)) }
-            )
+                    .padding(16.dp)
+            ) {
+                // 画像選択ボタン。
+                Button(
+                    onClick = {
+                        pickImageLauncher.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    }
+                ) {
+                    Text(stringResource(R.string.editor_select_image))
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { newText ->
+                        text = newText
+                        // 入力のたびに ViewModel へ通知し、自動保存（debounce）の判定を任せる
+                        viewModel.onTextChanged(loadedNote ?: NoteEntity(), newText)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    placeholder = { Text(stringResource(R.string.editor_text_placeholder)) }
+                )
+            }
         }
     }
 

@@ -19,7 +19,7 @@ private sealed class Screen {
 
 // 削除した付箋の情報を一覧画面へ渡すためのデータ。
 // token は連続削除時にもSnackbarを毎回表示させるための識別子。
-data class DeletedNoteEvent(
+data class DeletedNote(
     val note: NoteEntity,
     val token: Long = System.currentTimeMillis()
 )
@@ -33,7 +33,7 @@ fun StickyNoteApp(
 ) {
     var screen by remember { mutableStateOf<Screen>(Screen.List) }
     // 削除した付箋の情報。「元に戻す」を表示するために使用する。
-    var pendingUndo by remember { mutableStateOf<DeletedNoteEvent?>(null) }
+    var deletedNote by remember { mutableStateOf<DeletedNote?>(null) }
 
     when (val current = screen) {
         is Screen.List -> {
@@ -41,9 +41,9 @@ fun StickyNoteApp(
                 viewModel = listViewModel,
                 onNoteClick = { noteId -> screen = Screen.Editor(noteId) },
                 onAddClick = { screen = Screen.Editor(null) },
-                pendingUndo = pendingUndo,
+                deletedNote = deletedNote,
                 // Snackbarの表示が終わったら、削除情報をリセットする。
-                onUndoHandled = { pendingUndo = null }
+                onUndoHandled = { deletedNote = null }
             )
         }
         is Screen.Editor -> {
@@ -52,7 +52,7 @@ fun StickyNoteApp(
                 noteId = current.noteId,
                 onBack = { screen = Screen.List },
                 // 削除した付箋を「元に戻す」ための情報を保存する。
-                onNoteDeleted = { note -> pendingUndo = DeletedNoteEvent(note) }
+                onNoteDeleted = { note -> deletedNote = DeletedNote(note) }
             )
         }
     }
