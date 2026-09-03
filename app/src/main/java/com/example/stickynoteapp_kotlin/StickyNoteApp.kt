@@ -18,10 +18,8 @@ private sealed class Screen {
 }
 
 // 削除した付箋の情報を一覧画面へ渡すためのデータ。
-// token は連続削除時にもSnackbarを毎回表示させるための識別子。
 data class DeletedNote(
-    val note: NoteEntity,
-    val token: Long = System.currentTimeMillis()
+    val note: NoteEntity
 )
 
 // 今の画面（一覧 or 編集）を覚えておき、それに応じて表示する内容を切り替えます。

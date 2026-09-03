@@ -28,6 +28,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -40,6 +42,8 @@ import com.example.stickynoteapp_kotlin.R
 import com.example.stickynoteapp_kotlin.data.NoteEntity
 import com.example.stickynoteapp_kotlin.viewmodel.NoteListViewModel
 import com.example.stickynoteapp_kotlin.ui.theme.StickyNoteAppKotlinTheme
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filterNotNull
 
 // 付箋の一覧を表示する画面
 // TopAppBar でMaterial3の実験的なAPIを使用
@@ -62,22 +66,30 @@ fun NoteListScreen(
     val deletedMessage = stringResource(R.string.list_note_deleted_message)
     val undoActionLabel = stringResource(R.string.list_undo_action)
 
-    // 削除された付箋があるとき、「元に戻す」を表示する。
-    // tokenをキーにし、連続削除でも毎回表示させる。
-    LaunchedEffect(deletedNote?.token) {
-        val event = deletedNote ?: return@LaunchedEffect
-        val result = snackbarHostState.showSnackbar(
-            message = deletedMessage,
-            actionLabel = undoActionLabel,
-            // Undoの有効時間（約4秒）。この間だけ「元に戻す」が可能
-            duration = SnackbarDuration.Short
-        )
-        if (result == SnackbarResult.ActionPerformed) {
-            // 「元に戻す」が押された場合のみ、論理削除を取り消す
-            viewModel.restoreNote(event.note.id)
-        }
-        // 表示が終わったので、呼び出し元にリセットしてもらう（再表示防止）
-        onUndoHandled()
+    // ① Snackbar表示中も最新の削除情報を取得できるようにする。
+    val currentDeletedNote by rememberUpdatedState(deletedNote)
+
+    // 削除された付箋があるとき、「元に戻す」付きのSnackbarを表示する。
+    LaunchedEffect(Unit) {
+        // ② deletedNote の変化を監視する。
+        snapshotFlow { currentDeletedNote }
+            // ③ 削除された付箋がない場合は処理しない。
+            .filterNotNull()
+            // ④ 新しい削除情報を受け取ったら、古いSnackbar表示処理はキャンセルして最新のものを表示する
+            .collectLatest { event ->
+                val result = snackbarHostState.showSnackbar(
+                    message = deletedMessage,
+                    actionLabel = undoActionLabel,
+                    // Undoの有効時間（約4秒）。この間だけ「元に戻す」が可能
+                    duration = SnackbarDuration.Short
+                )
+                if (result == SnackbarResult.ActionPerformed) {
+                    // 「元に戻す」が押された場合のみ、論理削除を取り消す
+                    viewModel.restoreNote(event.note.id)
+                }
+                // 表示が終わったので、呼び出し元にリセットしてもらう（再表示防止）
+                onUndoHandled()
+            }
     }
 
     // 画面全体のレイアウトを設定する。
