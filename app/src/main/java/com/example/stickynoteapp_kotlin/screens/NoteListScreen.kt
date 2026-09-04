@@ -37,7 +37,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.stickynoteapp_kotlin.DeletedNote
 import com.example.stickynoteapp_kotlin.R
 import com.example.stickynoteapp_kotlin.data.NoteEntity
 import com.example.stickynoteapp_kotlin.viewmodel.NoteListViewModel
@@ -54,7 +53,7 @@ fun NoteListScreen(
     onNoteClick: (Long) -> Unit,
     onAddClick: () -> Unit,
     // 削除した付箋の情報。「元に戻す」を表示するために使用する。
-    deletedNote: DeletedNote? = null,
+    deletedNote: NoteEntity? = null,
     // Snackbarの表示が終わったことを呼び出し元に知らせる。
     onUndoHandled: () -> Unit = {}
 ) {
@@ -85,7 +84,7 @@ fun NoteListScreen(
                 )
                 if (result == SnackbarResult.ActionPerformed) {
                     // 「元に戻す」が押された場合のみ、論理削除を取り消す
-                    viewModel.restoreNote(event.note.id)
+                    viewModel.restoreNote(event.id)
                 }
                 // 表示が終わったので、呼び出し元にリセットしてもらう（再表示防止）
                 onUndoHandled()
