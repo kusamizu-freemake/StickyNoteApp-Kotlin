@@ -24,7 +24,7 @@ class MainActivity : ComponentActivity() {
     private val editorViewModel: NoteEditorViewModel by viewModels {
         val database = AppDatabase.getDatabase(applicationContext)
         val repository = NoteRepository(database.noteDao())
-        NoteEditorViewModelFactory(repository)
+        NoteEditorViewModelFactory(application, repository)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

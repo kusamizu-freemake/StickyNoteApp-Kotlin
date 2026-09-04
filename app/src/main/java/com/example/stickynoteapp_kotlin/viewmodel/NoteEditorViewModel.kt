@@ -1,40 +1,77 @@
 package com.example.stickynoteapp_kotlin.viewmodel
 
+import android.app.Application
+import android.net.Uri
+import android.util.Log
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.stickynoteapp_kotlin.data.ImageStorage
 import com.example.stickynoteapp_kotlin.data.NoteEntity
 import com.example.stickynoteapp_kotlin.data.NoteRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import java.io.IOException
 
 // NoteEditorViewModel は「編集画面（NoteEditorScreen）」専用のViewModel
-class NoteEditorViewModel(private val repository: NoteRepository) : ViewModel() {
+// 画像保存にアプリのContextが必要なため、AndroidViewModelを使用する
+class NoteEditorViewModel(
+    application: Application,
+    private val repository: NoteRepository
+) : AndroidViewModel(application) {
 
     companion object {
         // 自動保存を実行するまでの待機時間（最後の入力からこの時間だけ操作がなければ保存する）
         private const val AUTO_SAVE_DEBOUNCE_MS = 500L
     }
 
+    // 画像のアプリ内部への保存をImageStorageに任せる
+    private val imageStorage = ImageStorage(application)
+
     // 自動保存の待機中コルーチンを覚えておくための変数。
     // 新しい入力があったときに、前の待機をキャンセルするために使用する。
     private var autoSaveJob: Job? = null
+
+    // 画像の保存に失敗したことを画面に伝えるためのフラグ。
+    private val _imageSaveError = MutableStateFlow(false)
+    val imageSaveError: StateFlow<Boolean> = _imageSaveError
 
     // 指定した id の付箋を1件取得します。編集画面を開くときに呼び出し
     suspend fun getNoteById(id: Long): NoteEntity? = repository.getById(id)
 
     // 付箋を保存します。
-    // id が 0（＝まだ一度も保存されていない新規付箋）なら新規追加（insert）
-    // それ以外（＝既存の付箋）なら上書き更新（update）
-    fun saveNote(note: NoteEntity) {
+    // 画像が指定されていれば、先にアプリ内部へコピーして保存する
+    // コピーに失敗した場合は、付箋の保存も中止する
+    fun saveNote(note: NoteEntity, imageUri: Uri?) {
         viewModelScope.launch {
-            if (note.id == 0L) {
-                repository.insert(note)
+            var toSave = note
+
+            if (imageUri != null) {
+                try {
+                    val path = imageStorage.copyToInternalStorage(imageUri)
+                    toSave = toSave.copy(imagePath = path)
+                } catch (e: IOException) {
+                    Log.e("NoteEditorViewModel", "画像の保存に失敗しました", e)
+                    _imageSaveError.value = true
+                    return@launch
+                }
+            }
+
+            if (toSave.id == 0L) {
+                repository.insert(toSave)
             } else {
-                repository.update(note)
+                repository.update(toSave)
             }
         }
+    }
+
+    // エラーメッセージを表示した後、エラー状態をリセットする
+    fun onImageSaveErrorShown() {
+        _imageSaveError.value = false
     }
 
     // 付箋を論理削除（DBから完全に消すのではなく、isDeleted フラグを立てる）。
@@ -70,12 +107,15 @@ class NoteEditorViewModel(private val repository: NoteRepository) : ViewModel() 
     }
 }
 
-// Repositoryを渡してNoteEditorViewModelを作成する
-class NoteEditorViewModelFactory(private val repository: NoteRepository) : ViewModelProvider.Factory {
+// ApplicationとRepositoryを渡してViewModelを作成する
+class NoteEditorViewModelFactory(
+    private val application: Application,
+    private val repository: NoteRepository
+) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(NoteEditorViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return NoteEditorViewModel(repository) as T
+            return NoteEditorViewModel(application, repository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
     }
