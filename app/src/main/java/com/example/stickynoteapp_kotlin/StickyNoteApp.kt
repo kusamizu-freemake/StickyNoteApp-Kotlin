@@ -17,11 +17,6 @@ private sealed class Screen {
     data class Editor(val noteId: Long?) : Screen()
 }
 
-// 削除した付箋の情報を一覧画面へ渡すためのデータ。
-data class DeletedNote(
-    val note: NoteEntity
-)
-
 // 今の画面（一覧 or 編集）を覚えておき、それに応じて表示する内容を切り替えます。
 // MainActivity から呼び出されるため private は付けません。
 @Composable
@@ -31,7 +26,7 @@ fun StickyNoteApp(
 ) {
     var screen by remember { mutableStateOf<Screen>(Screen.List) }
     // 削除した付箋の情報。「元に戻す」を表示するために使用する。
-    var deletedNote by remember { mutableStateOf<DeletedNote?>(null) }
+    var deletedNote by remember { mutableStateOf<NoteEntity?>(null) }
 
     when (val current = screen) {
         is Screen.List -> {
@@ -50,7 +45,7 @@ fun StickyNoteApp(
                 noteId = current.noteId,
                 onBack = { screen = Screen.List },
                 // 削除した付箋を「元に戻す」ための情報を保存する。
-                onNoteDeleted = { note -> deletedNote = DeletedNote(note) }
+                onNoteDeleted = { note -> deletedNote = note }
             )
         }
     }
