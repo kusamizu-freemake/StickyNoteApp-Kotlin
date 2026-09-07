@@ -23,11 +23,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,6 +65,19 @@ fun NoteEditorScreen(
     // ギャラリーから選択した画像のURI。まだ未選択の場合は null。
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
 
+    // 画像保存エラーなどを表示するためのSnackbar
+    val snackbarHostState = remember { SnackbarHostState() }
+    val imageSaveErrorMessage = stringResource(R.string.editor_image_save_error)
+    val imageSaveError by viewModel.imageSaveError.collectAsState()
+
+    // 画像の保存に失敗したら、Snackbarで知らせる
+    LaunchedEffect(imageSaveError) {
+        if (imageSaveError) {
+            snackbarHostState.showSnackbar(imageSaveErrorMessage)
+            viewModel.onImageSaveErrorShown()
+        }
+    }
+
     // ギャラリーから画像を1枚選ぶための起動処理
     val pickImageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
@@ -86,11 +102,12 @@ fun NoteEditorScreen(
 
     // 現在の入力内容をDBに保存する処理。
     // 待機中の自動保存があればキャンセルしてから、手動保存を実行する。
+    // 画像が選択されている場合は、保存時にアプリ内部へコピーされる。
     fun save() {
         viewModel.cancelPendingAutoSave()
         val base = loadedNote ?: NoteEntity()
         val toSave = base.copy(text = text, updatedAt = System.currentTimeMillis())
-        viewModel.saveNote(toSave)
+        viewModel.saveNote(toSave, selectedImageUri)
     }
 
     // 現在の付箋を論理削除する処理。
@@ -139,7 +156,8 @@ fun NoteEditorScreen(
                     }
                 }
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { innerPadding ->
         if (isLoading) {
             Box(
