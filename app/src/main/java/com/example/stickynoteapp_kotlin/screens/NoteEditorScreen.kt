@@ -5,13 +5,16 @@ import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
@@ -21,6 +24,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -37,11 +41,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.stickynoteapp_kotlin.R
 import com.example.stickynoteapp_kotlin.data.NoteEntity
 import com.example.stickynoteapp_kotlin.viewmodel.NoteEditorViewModel
+import java.io.File
 
 // 付箋を作成・編集する画面
 // TopAppBar でMaterial3の実験的なAPIを使用
@@ -99,6 +105,10 @@ fun NoteEditorScreen(
         text = note?.text ?: ""
         isLoading = false
     }
+
+    // プレビューに表示する画像を決める。
+    // 新しく選択した画像を優先し、なければ保存済みの画像を表示する。
+    val previewImageModel: Any? = selectedImageUri ?: loadedNote?.imagePath?.let { path -> File(path) }
 
     // 現在の入力内容をDBに保存する処理。
     // 待機中の自動保存があればキャンセルしてから、手動保存を実行する。
@@ -186,7 +196,20 @@ fun NoteEditorScreen(
                     Text(stringResource(R.string.editor_select_image))
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                // 画像がある場合のみ、選択ボタンの直下にプレビューを表示する
+                previewImageModel?.let { model ->
+                    Spacer(modifier = Modifier.height(12.dp))
+                    NoteImage(
+                        model = model,
+                        contentDescription = stringResource(R.string.editor_image_preview_description),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(16f / 9f)
+                            .clip(RoundedCornerShape(12.dp))
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
 
                 OutlinedTextField(
                     value = text,

@@ -1,5 +1,7 @@
 package com.example.stickynoteapp_kotlin.screens
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Card
@@ -33,6 +36,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -41,6 +45,7 @@ import com.example.stickynoteapp_kotlin.R
 import com.example.stickynoteapp_kotlin.data.NoteEntity
 import com.example.stickynoteapp_kotlin.viewmodel.NoteListViewModel
 import com.example.stickynoteapp_kotlin.ui.theme.StickyNoteAppKotlinTheme
+import coil3.compose.SubcomposeAsyncImage
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
 
@@ -127,7 +132,8 @@ fun NoteListScreen(
                 // Compose が無駄な再描画をせず、賢く更新してくれます。
                 items(notes, key = { it.id }) { note ->
                     NoteCard(note = note, onClick = { onNoteClick(note.id) })
-                    Spacer(modifier = Modifier.height(8.dp))
+                    // カード同士の余白。詰まって見えないよう少し広めに取る
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
             }
         }
@@ -135,6 +141,7 @@ fun NoteListScreen(
 }
 
 // 付箋1件分を表す、色付きのカード
+// 画像を添付した付箋であっても、一覧では画像を表示せずテキストのみを表示する
 @Composable
 fun NoteCard(note: NoteEntity, onClick: () -> Unit) {
     val backgroundColor = Color(
@@ -146,7 +153,10 @@ fun NoteCard(note: NoteEntity, onClick: () -> Unit) {
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = backgroundColor)
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = backgroundColor),
+        // カードの輪郭を薄い線で示し、背景（画面）との境目を分かりやすくする
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
     ) {
         Text(
             text = note.text.ifBlank { stringResource(R.string.note_empty_text) },
@@ -154,6 +164,41 @@ fun NoteCard(note: NoteEntity, onClick: () -> Unit) {
             color = Color.Black,
             maxLines = 4,
             overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+// Coilを使って画像を表示する共通コンポーネント。
+// 保存済み画像と選択直後の画像の両方を表示できる
+// 現在は NoteEditorScreen（編集画面のプレビュー）のみで使用
+@Composable
+fun NoteImage(
+    model: Any,
+    contentDescription: String,
+    modifier: Modifier = Modifier
+) {
+    SubcomposeAsyncImage(
+        model = model,
+        contentDescription = contentDescription,
+        modifier = modifier,
+        contentScale = ContentScale.Crop,
+        loading = { ImagePlaceholder(stringResource(R.string.image_loading)) },
+        error = { ImagePlaceholder(stringResource(R.string.image_load_error)) }
+    )
+}
+
+// 読み込み中・エラー時に表示する簡易プレースホルダ
+@Composable
+private fun ImagePlaceholder(message: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surfaceVariant),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = message,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
