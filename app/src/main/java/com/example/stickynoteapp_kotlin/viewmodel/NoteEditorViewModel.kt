@@ -48,13 +48,13 @@ class NoteEditorViewModel(
     fun saveNote(note: NoteEntity, imageUri: Uri?) {
         viewModelScope.launch {
             if (imageUri == null) {
-                saveToRepository(note)
+                saveNoteEntity(note)
                 return@launch
             }
 
             saveImageUseCase(imageUri)
                 .onSuccess { path ->
-                    saveToRepository(note.copy(imagePath = path))
+                    saveNoteEntity(note.copy(imagePath = path))
                 }
                 .onFailure { e ->
                     Log.e("NoteEditorViewModel", "画像の保存に失敗しました", e)
@@ -63,8 +63,8 @@ class NoteEditorViewModel(
         }
     }
 
-    // NoteEntity を新規追加または上書き更新する。
-    private suspend fun saveToRepository(note: NoteEntity) {
+    // 付箋（NoteEntity）を保存する。新規なら追加、既存なら上書き更新する。
+    private suspend fun saveNoteEntity(note: NoteEntity) {
         if (note.id == 0L) {
             repository.insert(note)
         } else {
