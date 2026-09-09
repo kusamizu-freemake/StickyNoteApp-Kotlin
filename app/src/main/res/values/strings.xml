@@ -15,6 +15,9 @@
     <string name="editor_select_image">画像を選択</string>
     <string name="editor_image_save_error">画像の保存に失敗しました</string>
 
+    <!-- NoteEditorScreen: 色プリセット -->
+    <string name="editor_color_section_title">付箋の色</string>
+
     <!-- NoteListScreen -->
     <string name="list_title">付箋一覧</string>
     <string name="list_add_description">新規作成</string>
