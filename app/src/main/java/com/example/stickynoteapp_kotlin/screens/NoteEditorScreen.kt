@@ -53,9 +53,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.stickynoteapp_kotlin.R
-import com.example.stickynoteapp_kotlin.data.ColorPreset
-import com.example.stickynoteapp_kotlin.data.NoteColorPresets
 import com.example.stickynoteapp_kotlin.data.NoteEntity
+import com.example.stickynoteapp_kotlin.data.PresetColor
+import com.example.stickynoteapp_kotlin.data.toRgbInts
 import com.example.stickynoteapp_kotlin.viewmodel.NoteEditorViewModel
 import java.io.File
 
@@ -80,8 +80,8 @@ fun NoteEditorScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     // ギャラリーから選択した画像のURI。まだ未選択の場合は null。
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
-    // 選択中の色（NoteColorPresetsの何番目か）
-    var selectedColorIndex by remember { mutableStateOf(0) }
+    // 選択中の色プリセット
+    var selectedColor by remember { mutableStateOf(PresetColor.YELLOW) }
 
     // 画像保存エラーなどを表示するためのSnackbar
     val snackbarHostState = remember { SnackbarHostState() }
@@ -116,12 +116,12 @@ fun NoteEditorScreen(
         loadedNote = note
         text = note?.text ?: ""
         // 保存済みの色と同じプリセットを探し、選択状態にする（見つからなければ黄色にする）
-        val matchedIndex = note?.let { n ->
-            NoteColorPresets.indexOfFirst {
-                it.colorR == n.colorR && it.colorG == n.colorG && it.colorB == n.colorB
+        selectedColor = note?.let { n ->
+            PresetColor.entries.find { preset ->
+                val (r, g, b) = preset.toRgbInts()
+                r == n.colorR && g == n.colorG && b == n.colorB
             }
-        } ?: -1
-        selectedColorIndex = if (matchedIndex >= 0) matchedIndex else 0
+        } ?: PresetColor.YELLOW
         isLoading = false
     }
 
@@ -136,7 +136,7 @@ fun NoteEditorScreen(
         viewModel.cancelPendingAutoSave()
         val base = loadedNote ?: NoteEntity()
         val toSave = base.copy(text = text, updatedAt = System.currentTimeMillis())
-        // TODO: 選択した色（selectedColorIndex）をノートに保存する（保存対応Issueで実施）
+        // TODO: 選択した色のプリセットID（selectedColor.id）をノートに保存する（保存対応Issueで実施）
         viewModel.saveNote(toSave, selectedImageUri)
     }
 
@@ -238,20 +238,20 @@ fun NoteEditorScreen(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 ColorPresetRow(
-                    presets = NoteColorPresets,
-                    selectedIndex = selectedColorIndex,
-                    onColorSelected = { index -> selectedColorIndex = index }
+                    selectedColor = selectedColor,
+                    onColorSelected = { preset -> selectedColor = preset }
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
 
                 // 選んだ色とテキストのプレビュー（一覧画面と同じNoteCardを再利用）
+                val (previewR, previewG, previewB) = selectedColor.toRgbInts()
                 NoteCard(
                     note = (loadedNote ?: NoteEntity()).copy(
                         text = text,
-                        colorR = NoteColorPresets[selectedColorIndex].colorR,
-                        colorG = NoteColorPresets[selectedColorIndex].colorG,
-                        colorB = NoteColorPresets[selectedColorIndex].colorB
+                        colorR = previewR,
+                        colorG = previewG,
+                        colorB = previewB
                     ),
                     onClick = {}
                 )
@@ -302,16 +302,15 @@ fun NoteEditorScreen(
 // 色プリセットを横並びの丸いスウォッチとして表示する
 @Composable
 private fun ColorPresetRow(
-    presets: List<ColorPreset>,
-    selectedIndex: Int,
-    onColorSelected: (Int) -> Unit
+    selectedColor: PresetColor,
+    onColorSelected: (PresetColor) -> Unit
 ) {
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        presets.forEachIndexed { index, preset ->
+        PresetColor.entries.forEach { preset ->
             ColorSwatch(
-                color = Color(preset.colorR, preset.colorG, preset.colorB),
-                isSelected = index == selectedIndex,
-                onClick = { onColorSelected(index) }
+                color = preset.color,
+                isSelected = preset == selectedColor,
+                onClick = { onColorSelected(preset) }
             )
         }
     }
