@@ -8,9 +8,8 @@ data class NoteEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0L,
     val text: String = "",
-    val colorR: Int = 255,
-    val colorG: Int = 245,
-    val colorB: Int = 157,
+    // 色プリセットのID（PresetColor.id）。実際の色はPresetColor側で管理する。
+    val colorId: Int = PresetColor.YELLOW.id,
     val isTop: Boolean = false,
     val isDeleted: Boolean = false,
     val imagePath: String? = null,

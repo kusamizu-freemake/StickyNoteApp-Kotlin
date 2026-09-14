@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 
 // アプリ全体のデータベース本体です。
 
-@Database(entities = [NoteEntity::class], version = 1, exportSchema = false)
+@Database(entities = [NoteEntity::class], version = 2, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
 
     // この DAO を通じて notes テーブルにアクセス
@@ -26,7 +26,10 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "sticky_note_database"
-                ).build()
+                )
+                    // DBの構造が変わった場合は、既存DBを削除して作り直す
+                    .fallbackToDestructiveMigration(true)
+                    .build()
                 INSTANCE = instance
                 instance
             }

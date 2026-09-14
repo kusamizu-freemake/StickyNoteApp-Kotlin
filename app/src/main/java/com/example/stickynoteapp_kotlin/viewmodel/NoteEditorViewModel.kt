@@ -25,13 +25,17 @@ class NoteEditorViewModel(
 ) : AndroidViewModel(application) {
 
     companion object {
-        // 自動保存を実行するまでの待機時間（最後の入力からこの時間だけ操作がなければ保存する）
+        // 自動保存を実行するまでの待機時間（最後の操作から500ms後に自動保存する）
         private const val AUTO_SAVE_DEBOUNCE_MS = 500L
     }
 
-    // 自動保存の待機中コルーチンを覚えておくための変数。
-    // 新しい入力があったときに、前の待機をキャンセルするために使用する。
-    private var autoSaveJob: Job? = null
+    // テキストの自動保存を管理する
+    // 新しいテキスト入力があったときに、前の待機をキャンセルするために使用する。
+    private var textAutoSaveJob: Job? = null
+
+    // 色の自動保存を管理する
+    // テキストと色を別々に管理し、互いの保存をキャンセルしないようにする。
+    private var colorAutoSaveJob: Job? = null
 
     // 画像の保存に失敗したことを画面に伝えるためのフラグ。
     private val _imageSaveError = MutableStateFlow(false)
@@ -90,23 +94,40 @@ class NoteEditorViewModel(
     // 新規付箋はまだ一度も保存されていないため、自動保存の対象外とする。
     fun onTextChanged(note: NoteEntity, text: String) {
         // 前回の待機処理が残っていればキャンセルし、待ち直す（＝debounce）
-        autoSaveJob?.cancel()
+        textAutoSaveJob?.cancel()
 
         if (note.id == 0L) {
             return
         }
 
-        autoSaveJob = viewModelScope.launch {
+        textAutoSaveJob = viewModelScope.launch {
             delay(AUTO_SAVE_DEBOUNCE_MS)
             val toSave = note.copy(text = text, updatedAt = System.currentTimeMillis())
             repository.update(toSave)
         }
     }
 
+    // 色プリセットが変更されるたびに画面から呼び出す関数。
+    // テキストと同じ仕組み（debounce・新規付箋は対象外）で自動保存する。
+    fun onColorChanged(note: NoteEntity, colorId: Int) {
+        colorAutoSaveJob?.cancel()
+
+        if (note.id == 0L) {
+            return
+        }
+
+        colorAutoSaveJob = viewModelScope.launch {
+            delay(AUTO_SAVE_DEBOUNCE_MS)
+            val toSave = note.copy(colorId = colorId, updatedAt = System.currentTimeMillis())
+            repository.update(toSave)
+        }
+    }
+
     // 手動保存（保存ボタン・戻るボタン）が実行される直前に呼び出す。
-    // 待機中の自動保存があればキャンセルし、手動保存のみが実行されるようにする。
+    // 待機中の自動保存（テキスト・色の両方）があればキャンセルし、手動保存のみが実行されるようにする。
     fun cancelPendingAutoSave() {
-        autoSaveJob?.cancel()
+        textAutoSaveJob?.cancel()
+        colorAutoSaveJob?.cancel()
     }
 }
 

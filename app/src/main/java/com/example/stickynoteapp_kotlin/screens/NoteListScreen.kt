@@ -43,6 +43,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.stickynoteapp_kotlin.R
 import com.example.stickynoteapp_kotlin.data.NoteEntity
+import com.example.stickynoteapp_kotlin.data.PresetColor
 import com.example.stickynoteapp_kotlin.viewmodel.NoteListViewModel
 import com.example.stickynoteapp_kotlin.ui.theme.StickyNoteAppKotlinTheme
 import coil3.compose.SubcomposeAsyncImage
@@ -144,11 +145,8 @@ fun NoteListScreen(
 // 画像を添付した付箋であっても、一覧では画像を表示せずテキストのみを表示する
 @Composable
 fun NoteCard(note: NoteEntity, onClick: () -> Unit) {
-    val backgroundColor = Color(
-        red = note.colorR,
-        green = note.colorG,
-        blue = note.colorB
-    )
+    // colorId から対応するプリセット色を取得して背景色にする
+    val backgroundColor = PresetColor.fromId(note.colorId).color
 
     Card(
         onClick = onClick,
