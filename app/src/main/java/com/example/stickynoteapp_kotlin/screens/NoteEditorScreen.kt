@@ -55,7 +55,6 @@ import androidx.compose.ui.unit.dp
 import com.example.stickynoteapp_kotlin.R
 import com.example.stickynoteapp_kotlin.data.NoteEntity
 import com.example.stickynoteapp_kotlin.data.PresetColor
-import com.example.stickynoteapp_kotlin.data.toRgbInts
 import com.example.stickynoteapp_kotlin.viewmodel.NoteEditorViewModel
 import java.io.File
 
@@ -115,13 +114,8 @@ fun NoteEditorScreen(
         }
         loadedNote = note
         text = note?.text ?: ""
-        // 保存済みの色と同じプリセットを探し、選択状態にする（見つからなければ黄色にする）
-        selectedColor = note?.let { n ->
-            PresetColor.entries.find { preset ->
-                val (r, g, b) = preset.toRgbInts()
-                r == n.colorR && g == n.colorG && b == n.colorB
-            }
-        } ?: PresetColor.YELLOW
+        // 保存したIDから色を取得する
+        selectedColor = PresetColor.fromId(note?.colorId ?: PresetColor.YELLOW.id)
         isLoading = false
     }
 
@@ -135,8 +129,7 @@ fun NoteEditorScreen(
     fun save() {
         viewModel.cancelPendingAutoSave()
         val base = loadedNote ?: NoteEntity()
-        val toSave = base.copy(text = text, updatedAt = System.currentTimeMillis())
-        // TODO: 選択した色のプリセットID（selectedColor.id）をノートに保存する（保存対応Issueで実施）
+        val toSave = base.copy(text = text, colorId = selectedColor.id, updatedAt = System.currentTimeMillis())
         viewModel.saveNote(toSave, selectedImageUri)
     }
 
@@ -239,19 +232,20 @@ fun NoteEditorScreen(
                 Spacer(modifier = Modifier.height(8.dp))
                 ColorPresetRow(
                     selectedColor = selectedColor,
-                    onColorSelected = { preset -> selectedColor = preset }
+                    onColorSelected = { preset ->
+                        selectedColor = preset
+                        // 色の変更をViewModelに通知する
+                        viewModel.onColorChanged(loadedNote ?: NoteEntity(), preset.id)
+                    }
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
 
                 // 選んだ色とテキストのプレビュー（一覧画面と同じNoteCardを再利用）
-                val (previewR, previewG, previewB) = selectedColor.toRgbInts()
                 NoteCard(
                     note = (loadedNote ?: NoteEntity()).copy(
                         text = text,
-                        colorR = previewR,
-                        colorG = previewG,
-                        colorB = previewB
+                        colorId = selectedColor.id
                     ),
                     onClick = {}
                 )
