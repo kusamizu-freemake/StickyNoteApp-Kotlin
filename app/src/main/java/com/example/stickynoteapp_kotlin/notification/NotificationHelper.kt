@@ -5,7 +5,6 @@ import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
 import com.example.stickynoteapp_kotlin.R
-import android.util.Log // 確認後削除
 
 // StickyNote用のNotification Channelを作成・登録するためのヘルパー
 object NotificationHelper {
@@ -16,7 +15,6 @@ object NotificationHelper {
     // Notification Channelを作成し、システムに登録する。
     // API 26未満は対象外（Channelの概念がないため）
     fun createNotificationChannel(context: Context) {
-        Log.d("NotificationHelper", "createNotificationChannel called. SDK_INT=${Build.VERSION.SDK_INT}") // 確認後削除
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
@@ -26,7 +24,6 @@ object NotificationHelper {
 
             val manager = context.getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(channel)
-            Log.d("NotificationHelper", "Channel created: $CHANNEL_ID") // 確認後削除
         }
     }
 }
