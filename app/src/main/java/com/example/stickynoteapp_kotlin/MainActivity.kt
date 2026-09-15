@@ -8,6 +8,7 @@ import androidx.activity.viewModels
 import com.example.stickynoteapp_kotlin.data.AppDatabase
 import com.example.stickynoteapp_kotlin.data.ImageStorage
 import com.example.stickynoteapp_kotlin.data.NoteRepository
+import com.example.stickynoteapp_kotlin.notification.NotificationHelper
 import com.example.stickynoteapp_kotlin.usecase.SaveImageUseCase
 import com.example.stickynoteapp_kotlin.viewmodel.NoteListViewModel
 import com.example.stickynoteapp_kotlin.viewmodel.NoteListViewModelFactory
@@ -34,6 +35,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // 通知チャンネルを登録する（未登録の場合のみ有効）
+        NotificationHelper.createNotificationChannel(applicationContext)
         setContent {
             StickyNoteAppKotlinTheme {
                 StickyNoteApp(listViewModel = listViewModel, editorViewModel = editorViewModel)

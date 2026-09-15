@@ -11,6 +11,7 @@ import com.example.stickynoteapp_kotlin.data.NoteEntity
 import com.example.stickynoteapp_kotlin.data.NoteRepository
 import com.example.stickynoteapp_kotlin.usecase.SaveImageUseCase
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -124,10 +125,10 @@ class NoteEditorViewModel(
     }
 
     // 手動保存（保存ボタン・戻るボタン）が実行される直前に呼び出す。
-    // 待機中の自動保存（テキスト・色の両方）があればキャンセルし、手動保存のみが実行されるようにする。
-    fun cancelPendingAutoSave() {
-        textAutoSaveJob?.cancel()
-        colorAutoSaveJob?.cancel()
+    // cancel()だけでは停止を待たないため、cancelAndJoin()で完全に停止するまで待つ。
+    suspend fun cancelPendingAutoSave() {
+        textAutoSaveJob?.cancelAndJoin()
+        colorAutoSaveJob?.cancelAndJoin()
     }
 }
 
