@@ -45,6 +45,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,6 +57,7 @@ import com.example.stickynoteapp_kotlin.R
 import com.example.stickynoteapp_kotlin.data.NoteEntity
 import com.example.stickynoteapp_kotlin.data.PresetColor
 import com.example.stickynoteapp_kotlin.viewmodel.NoteEditorViewModel
+import kotlinx.coroutines.launch
 import java.io.File
 
 // 付箋を作成・編集する画面
@@ -69,6 +71,10 @@ fun NoteEditorScreen(
     // 削除した付箋を一覧画面へ渡すための処理
     onNoteDeleted: (NoteEntity) -> Unit
 ) {
+    // 画面のライフサイクルに紐づくコルーチンスコープ。
+    // suspend関数のcancelPendingAutoSave()を呼び出すために使用する。。
+    val coroutineScope = rememberCoroutineScope()
+
     // 読み込み中の付箋データ（保存済みの元データ）。text 以外の項目（色など）を保持しておくために使用
     var loadedNote by remember { mutableStateOf<NoteEntity?>(null) }
     // 画面に入力されているテキスト本文。
@@ -124,23 +130,27 @@ fun NoteEditorScreen(
     val previewImageModel: Any? = selectedImageUri ?: loadedNote?.imagePath?.let { path -> File(path) }
 
     // 現在の入力内容をDBに保存する処理。
-    // 待機中の自動保存があればキャンセルしてから、手動保存を実行する。
+    // 待機中の自動保存が完全に止まるのを待ってから、手動保存を実行する。
     // 画像が選択されている場合は、保存時にアプリ内部へコピーされる。
     fun save() {
-        viewModel.cancelPendingAutoSave()
-        val base = loadedNote ?: NoteEntity()
-        val toSave = base.copy(text = text, colorId = selectedColor.id, updatedAt = System.currentTimeMillis())
-        viewModel.saveNote(toSave, selectedImageUri)
+        coroutineScope.launch {
+            viewModel.cancelPendingAutoSave()
+            val base = loadedNote ?: NoteEntity()
+            val toSave = base.copy(text = text, colorId = selectedColor.id, updatedAt = System.currentTimeMillis())
+            viewModel.saveNote(toSave, selectedImageUri)
+        }
     }
 
     // 現在の付箋を論理削除する処理。
-    // 保存はせず、待機中の自動保存だけキャンセルしてから削除を実行する。
+    // 待機中の自動保存が止まるのを待ってから削除を実行する。
     fun deleteNote() {
         val note = loadedNote ?: return
-        viewModel.cancelPendingAutoSave()
-        viewModel.deleteNote(note)
-        // 削除した付箋を一覧画面へ通知する
-        onNoteDeleted(note)
+        coroutineScope.launch {
+            viewModel.cancelPendingAutoSave()
+            viewModel.deleteNote(note)
+            // 削除した付箋を一覧画面へ通知する
+            onNoteDeleted(note)
+        }
     }
 
     Scaffold(
