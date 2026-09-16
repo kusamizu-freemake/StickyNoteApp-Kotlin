@@ -45,27 +45,36 @@ class NoteEditorViewModel(
     // 指定した id の付箋を1件取得します。編集画面を開くときに呼び出し
     suspend fun getNoteById(id: Long): NoteEntity? = repository.getById(id)
 
-    // 付箋を保存します。
-    // 画像が選択されていれば、先に内部ストレージへ保存する
-    // 画像のコピーに失敗した場合は、テキストを含め保存自体を中止する。
-    // id が 0（＝まだ一度も保存されていない新規付箋）なら新規追加（insert）
-    // それ以外（＝既存の付箋）なら上書き更新（update）
-    fun saveNote(note: NoteEntity, imageUri: Uri?) {
+    // 保存ボタン・戻るボタンから呼ばれる、保存の窓口となる関数。
+    // 自動保存の停止→保存内容の組み立て→DB保存、をまとめて行う。
+    fun save(currentNote: NoteEntity, text: String, colorId: Int, imageUri: Uri?) {
         viewModelScope.launch {
-            if (imageUri == null) {
-                saveNoteEntity(note)
-                return@launch
-            }
-
-            saveImageUseCase(imageUri)
-                .onSuccess { path ->
-                    saveNoteEntity(note.copy(imagePath = path))
-                }
-                .onFailure { e ->
-                    Log.e("NoteEditorViewModel", "画像の保存に失敗しました", e)
-                    _imageSaveError.value = true
-                }
+            cancelPendingAutoSave()
+            val toSave = currentNote.copy(
+                text = text,
+                colorId = colorId,
+                updatedAt = System.currentTimeMillis()
+            )
+            persistNote(toSave, imageUri)
         }
+    }
+
+    // 付箋をDBに保存する処理。画像がある場合は先に内部ストレージへコピーする。
+    // 画像の保存に失敗した場合は、テキストを含め保存自体を中止する。
+    private suspend fun persistNote(note: NoteEntity, imageUri: Uri?) {
+        if (imageUri == null) {
+            saveNoteEntity(note)
+            return
+        }
+
+        saveImageUseCase(imageUri)
+            .onSuccess { path ->
+                saveNoteEntity(note.copy(imagePath = path))
+            }
+            .onFailure { e ->
+                Log.e("NoteEditorViewModel", "画像の保存に失敗しました", e)
+                _imageSaveError.value = true
+            }
     }
 
     // 付箋（NoteEntity）を保存する。新規なら追加、既存なら上書き更新する。
@@ -124,7 +133,7 @@ class NoteEditorViewModel(
         }
     }
 
-    // 手動保存（保存ボタン・戻るボタン）が実行される直前に呼び出す。
+    // 手動保存・削除の直前に呼び出す。
     // cancel()だけでは停止を待たないため、cancelAndJoin()で完全に停止するまで待つ。
     suspend fun cancelPendingAutoSave() {
         textAutoSaveJob?.cancelAndJoin()
