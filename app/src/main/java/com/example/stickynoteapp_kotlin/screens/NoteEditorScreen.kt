@@ -71,8 +71,7 @@ fun NoteEditorScreen(
     // 削除した付箋を一覧画面へ渡すための処理
     onNoteDeleted: (NoteEntity) -> Unit
 ) {
-    // 画面のライフサイクルに紐づくコルーチンスコープ。
-    // suspend関数のcancelPendingAutoSave()を呼び出すために使用する。。
+    // 削除処理で使うコルーチンスコープ（保存処理はViewModel側で行うため対象外）
     val coroutineScope = rememberCoroutineScope()
 
     // 読み込み中の付箋データ（保存済みの元データ）。text 以外の項目（色など）を保持しておくために使用
@@ -129,18 +128,6 @@ fun NoteEditorScreen(
     // 新しく選択した画像を優先し、なければ保存済みの画像を表示する。
     val previewImageModel: Any? = selectedImageUri ?: loadedNote?.imagePath?.let { path -> File(path) }
 
-    // 現在の入力内容をDBに保存する処理。
-    // 待機中の自動保存が完全に止まるのを待ってから、手動保存を実行する。
-    // 画像が選択されている場合は、保存時にアプリ内部へコピーされる。
-    fun save() {
-        coroutineScope.launch {
-            viewModel.cancelPendingAutoSave()
-            val base = loadedNote ?: NoteEntity()
-            val toSave = base.copy(text = text, colorId = selectedColor.id, updatedAt = System.currentTimeMillis())
-            viewModel.saveNote(toSave, selectedImageUri)
-        }
-    }
-
     // 現在の付箋を論理削除する処理。
     // 待機中の自動保存が止まるのを待ってから削除を実行する。
     fun deleteNote() {
@@ -166,7 +153,11 @@ fun NoteEditorScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { save(); onBack() }) {
+                    IconButton(onClick = {
+                        // 画面は「保存して」と指示するだけ。手順はViewModelにお任せする
+                        viewModel.save(loadedNote ?: NoteEntity(), text, selectedColor.id, selectedImageUri)
+                        onBack()
+                    }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.editor_back_description)
@@ -184,7 +175,10 @@ fun NoteEditorScreen(
                             )
                         }
                     }
-                    TextButton(onClick = { save(); onBack() }) {
+                    TextButton(onClick = {
+                        viewModel.save(loadedNote ?: NoteEntity(), text, selectedColor.id, selectedImageUri)
+                        onBack()
+                    }) {
                         Text(stringResource(R.string.editor_save))
                     }
                 }

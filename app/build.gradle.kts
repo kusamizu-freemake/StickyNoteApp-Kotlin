@@ -13,7 +13,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.stickynoteapp_kotlin"
-        minSdk = 24
+        minSdk = 29
         targetSdk = 37
         versionCode = 1
         versionName = "1.0"
