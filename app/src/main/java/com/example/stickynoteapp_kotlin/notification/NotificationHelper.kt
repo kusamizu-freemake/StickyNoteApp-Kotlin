@@ -12,7 +12,6 @@ object NotificationHelper {
     const val CHANNEL_ID = "sticky_note_channel"
 
     // Notification Channelを作成し、システムに登録する。
-    // minSdkが29のため、API 26未満の分岐は不要。
     fun createNotificationChannel(context: Context) {
         val channel = NotificationChannel(
             CHANNEL_ID,
