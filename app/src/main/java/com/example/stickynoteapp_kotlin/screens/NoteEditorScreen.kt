@@ -45,7 +45,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,7 +56,6 @@ import com.example.stickynoteapp_kotlin.R
 import com.example.stickynoteapp_kotlin.data.NoteEntity
 import com.example.stickynoteapp_kotlin.data.PresetColor
 import com.example.stickynoteapp_kotlin.viewmodel.NoteEditorViewModel
-import kotlinx.coroutines.launch
 import java.io.File
 
 // 付箋を作成・編集する画面
@@ -71,9 +69,6 @@ fun NoteEditorScreen(
     // 削除した付箋を一覧画面へ渡すための処理
     onNoteDeleted: (NoteEntity) -> Unit
 ) {
-    // 削除処理で使うコルーチンスコープ（保存処理はViewModel側で行うため対象外）
-    val coroutineScope = rememberCoroutineScope()
-
     // 読み込み中の付箋データ（保存済みの元データ）。text 以外の項目（色など）を保持しておくために使用
     var loadedNote by remember { mutableStateOf<NoteEntity?>(null) }
     // 画面に入力されているテキスト本文。
@@ -92,11 +87,33 @@ fun NoteEditorScreen(
     val imageSaveErrorMessage = stringResource(R.string.editor_image_save_error)
     val imageSaveError by viewModel.imageSaveError.collectAsState()
 
+    // 保存・削除がViewModel側で完了したかどうかを監視するための値。
+    // trueになったり、付箋が入ったりしたら、下のLaunchedEffectが反応する。
+    val saveCompleted by viewModel.saveCompleted.collectAsState()
+    val deleteCompletedNote by viewModel.deleteCompleted.collectAsState()
+
     // 画像の保存に失敗したら、Snackbarで知らせる
     LaunchedEffect(imageSaveError) {
         if (imageSaveError) {
             snackbarHostState.showSnackbar(imageSaveErrorMessage)
             viewModel.onImageSaveErrorShown()
+        }
+    }
+
+    // 保存が完了したら一覧画面へ戻る
+    LaunchedEffect(saveCompleted) {
+        if (saveCompleted) {
+            onBack()
+            viewModel.onSaveCompletedHandled()
+        }
+    }
+
+    // 削除が完了したら、一覧画面へUndo用の情報を伝えてから戻る
+    LaunchedEffect(deleteCompletedNote) {
+        deleteCompletedNote?.let { note ->
+            onNoteDeleted(note)
+            onBack()
+            viewModel.onDeleteCompletedHandled()
         }
     }
 
@@ -128,18 +145,6 @@ fun NoteEditorScreen(
     // 新しく選択した画像を優先し、なければ保存済みの画像を表示する。
     val previewImageModel: Any? = selectedImageUri ?: loadedNote?.imagePath?.let { path -> File(path) }
 
-    // 現在の付箋を論理削除する処理。
-    // 待機中の自動保存が止まるのを待ってから削除を実行する。
-    fun deleteNote() {
-        val note = loadedNote ?: return
-        coroutineScope.launch {
-            viewModel.cancelPendingAutoSave()
-            viewModel.deleteNote(note)
-            // 削除した付箋を一覧画面へ通知する
-            onNoteDeleted(note)
-        }
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -154,9 +159,8 @@ fun NoteEditorScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = {
-                        // 画面は「保存して」と指示するだけ。手順はViewModelにお任せする
+                        // 画面は「保存して」と指示するだけ。画面遷移は保存完了後にLaunchedEffectが行う
                         viewModel.save(loadedNote ?: NoteEntity(), text, selectedColor.id, selectedImageUri)
-                        onBack()
                     }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
@@ -177,7 +181,6 @@ fun NoteEditorScreen(
                     }
                     TextButton(onClick = {
                         viewModel.save(loadedNote ?: NoteEntity(), text, selectedColor.id, selectedImageUri)
-                        onBack()
                     }) {
                         Text(stringResource(R.string.editor_save))
                     }
@@ -272,8 +275,9 @@ fun NoteEditorScreen(
         }
     }
 
-    // 削除確認ダイアログ。「削除」を押すと論理削除を実行して一覧画面に戻り、
+    // 削除確認ダイアログ。「削除」を押すと論理削除を実行し、
     // 「キャンセル」を押すと閉じるだけで何も変更しない。
+    // 削除完了後の画面遷移は行わない（上のLaunchedEffectが担当する）。
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
@@ -282,8 +286,7 @@ fun NoteEditorScreen(
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteDialog = false
-                    deleteNote()
-                    onBack()
+                    loadedNote?.let { viewModel.deleteNote(it) }
                 }) {
                     Text(stringResource(R.string.editor_delete_confirm))
                 }

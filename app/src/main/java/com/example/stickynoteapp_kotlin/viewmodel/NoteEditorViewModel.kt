@@ -42,6 +42,16 @@ class NoteEditorViewModel(
     private val _imageSaveError = MutableStateFlow(false)
     val imageSaveError: StateFlow<Boolean> = _imageSaveError
 
+    // 保存が終わったかどうかを画面に知らせるための値。
+    // trueになったら、画面側は一覧画面に戻る。
+    private val _saveCompleted = MutableStateFlow(false)
+    val saveCompleted: StateFlow<Boolean> = _saveCompleted
+
+    // 削除が終わったかどうかを画面に知らせるための値。
+    // 削除した付箋のデータも一緒に持たせることで、一覧画面のUndo（元に戻す）で使えるようにする。
+    private val _deleteCompleted = MutableStateFlow<NoteEntity?>(null)
+    val deleteCompleted: StateFlow<NoteEntity?> = _deleteCompleted
+
     // 指定した id の付箋を1件取得します。編集画面を開くときに呼び出し
     suspend fun getNoteById(id: Long): NoteEntity? = repository.getById(id)
 
@@ -56,6 +66,8 @@ class NoteEditorViewModel(
                 updatedAt = System.currentTimeMillis()
             )
             persistNote(toSave, imageUri)
+            // 画像保存に失敗した場合も含め、保存処理自体は完了したことを画面に伝える
+            _saveCompleted.value = true
         }
     }
 
@@ -91,12 +103,26 @@ class NoteEditorViewModel(
         _imageSaveError.value = false
     }
 
+    // 画面が「保存完了」を受け取ったあと、値を元(false)に戻す関数。
+    // 戻さないと、次に編集画面を開いたときに古い通知のまま扱われてしまう。
+    fun onSaveCompletedHandled() {
+        _saveCompleted.value = false
+    }
+
     // 付箋を論理削除（DBから完全に消すのではなく、isDeleted フラグを立てる）。
     // id が 0（＝まだ一度も保存されていない付箋）の場合、DBには存在しないため何も起こらない。
     fun deleteNote(note: NoteEntity) {
         viewModelScope.launch {
+            cancelPendingAutoSave()
             repository.delete(note.id)
+            // 削除した付箋を画面に伝える（Undo用の情報として一覧画面へ渡すため）
+            _deleteCompleted.value = note
         }
+    }
+
+    // 削除完了の通知を画面が処理し終えたら、画面から呼び出してリセットする。
+    fun onDeleteCompletedHandled() {
+        _deleteCompleted.value = null
     }
 
     // テキストが変更されるたびに画面から呼び出す関数。
