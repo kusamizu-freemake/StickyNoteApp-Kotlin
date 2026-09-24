@@ -1,14 +1,17 @@
 package com.example.stickynoteapp_kotlin
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.core.content.ContextCompat
 import com.example.stickynoteapp_kotlin.data.AppDatabase
 import com.example.stickynoteapp_kotlin.data.ImageStorage
 import com.example.stickynoteapp_kotlin.data.NoteRepository
 import com.example.stickynoteapp_kotlin.notification.NotificationHelper
+import com.example.stickynoteapp_kotlin.notification.StickyForegroundService
 import com.example.stickynoteapp_kotlin.usecase.SaveImageUseCase
 import com.example.stickynoteapp_kotlin.viewmodel.NoteListViewModel
 import com.example.stickynoteapp_kotlin.viewmodel.NoteListViewModelFactory
@@ -37,6 +40,11 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         // 通知チャンネルを登録する（未登録の場合のみ有効）
         NotificationHelper.createNotificationChannel(applicationContext)
+        // 常駐通知を表示するフォアグラウンドサービスを起動する
+        ContextCompat.startForegroundService(
+            applicationContext,
+            Intent(applicationContext, StickyForegroundService::class.java)
+        )
         setContent {
             StickyNoteAppKotlinTheme {
                 StickyNoteApp(listViewModel = listViewModel, editorViewModel = editorViewModel)
