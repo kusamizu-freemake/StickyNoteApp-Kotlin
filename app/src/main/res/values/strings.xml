@@ -34,4 +34,7 @@
 
     <!-- Notification Channel -->
     <string name="notification_channel_name">付箋の通知</string>
+
+    <!-- クイック設定タイル -->
+    <string name="tile_label">付箋を開く</string>
 </resources>
