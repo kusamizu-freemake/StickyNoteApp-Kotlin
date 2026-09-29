@@ -1,10 +1,12 @@
 package com.example.stickynoteapp_kotlin
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.runtime.mutableStateOf
 import com.example.stickynoteapp_kotlin.data.AppDatabase
 import com.example.stickynoteapp_kotlin.data.ImageStorage
 import com.example.stickynoteapp_kotlin.data.NoteRepository
@@ -17,6 +19,15 @@ import com.example.stickynoteapp_kotlin.viewmodel.NoteEditorViewModelFactory
 import com.example.stickynoteapp_kotlin.ui.theme.StickyNoteAppKotlinTheme
 
 class MainActivity : ComponentActivity() {
+
+    companion object {
+        // クイック設定タイルから新規付箋を開くための識別子
+        const val ACTION_NEW_NOTE = "NEW_NOTE"
+    }
+
+    // 新規付箋を開く依頼を受け取ったかどうか
+    private val isNewNoteRequested = mutableStateOf(false)
+
     // 一覧画面用・編集画面用、それぞれ専用のViewModelをRepositoryから作成する
     private val listViewModel: NoteListViewModel by viewModels {
         val database = AppDatabase.getDatabase(applicationContext)
@@ -37,10 +48,32 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         // 通知チャンネルを登録する（未登録の場合のみ有効）
         NotificationHelper.createNotificationChannel(applicationContext)
+        // 初回起動時だけ、新規付箋を開く依頼を確認する
+        if (savedInstanceState == null) {
+            isNewNoteRequested.value = isNewNoteIntent(intent)
+        }
         setContent {
             StickyNoteAppKotlinTheme {
-                StickyNoteApp(listViewModel = listViewModel, editorViewModel = editorViewModel)
+                StickyNoteApp(
+                    listViewModel = listViewModel,
+                    editorViewModel = editorViewModel,
+                    isNewNoteRequested = isNewNoteRequested.value,
+                    onNewNoteRequestHandled = { isNewNoteRequested.value = false }
+                )
             }
         }
+    }
+
+    // アプリがすでに開いているときに、タイルから呼び出されると呼ばれる。
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (isNewNoteIntent(intent)) {
+            isNewNoteRequested.value = true
+        }
+    }
+
+    // 届いた Intent が「新規付箋の作成画面を開く依頼」かどうかを判定する。
+    private fun isNewNoteIntent(intent: Intent): Boolean {
+        return intent.action == ACTION_NEW_NOTE
     }
 }
