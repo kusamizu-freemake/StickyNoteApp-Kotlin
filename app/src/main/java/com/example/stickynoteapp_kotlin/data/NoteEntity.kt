@@ -13,6 +13,8 @@ data class NoteEntity(
     val isTop: Boolean = false,
     val isDeleted: Boolean = false,
     val imagePath: String? = null,
+    // リマインダーの通知時刻。未設定の場合はnull
+    val reminderAt: Long? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 )
