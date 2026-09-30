@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 
 // アプリ全体のデータベース本体です。
 
-@Database(entities = [NoteEntity::class], version = 2, exportSchema = false)
+@Database(entities = [NoteEntity::class], version = 3, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
 
     // この DAO を通じて notes テーブルにアクセス
